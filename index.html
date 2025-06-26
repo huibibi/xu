@@ -1,9 +1,530 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-<meta charset="utf-8">
-<title>啊哈哈哈哈</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时间线回忆</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow-x: hidden;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        /* 飘落花瓣动画 */
+        .petal {
+            position: fixed;
+            width: 15px;
+            height: 15px;
+            background: #ff69b4;
+            border-radius: 50% 0;
+            animation: fall linear infinite;
+            opacity: 0.7;
+            z-index: 1;
+        }
+
+        .petal:nth-child(odd) {
+            background: #ffb6c1;
+        }
+
+        .petal:nth-child(3n) {
+            background: #ffc0cb;
+        }
+
+        @keyframes fall {
+            from {
+                transform: translateY(-100vh) rotate(0deg);
+            }
+            to {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+
+        /* 时间线容器 */
+        .timeline-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateX(-50%);
+        }
+
+        .timeline-item {
+            margin: 30px 0;
+            position: relative;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        .timeline-item:nth-child(even) {
+            animation-delay: 0.2s;
+        }
+
+        .timeline-item:nth-child(odd) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .timeline-content {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-left: 50%;
+            margin-right: 20px;
+            position: relative;
+        }
+
+        .timeline-item:nth-child(even) .timeline-content {
+            margin-left: 20px;
+            margin-right: 50%;
+        }
+
+        .timeline-content::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: -10px;
+            width: 0;
+            height: 0;
+            border: 10px solid transparent;
+            border-right-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .timeline-item:nth-child(even) .timeline-content::before {
+            left: auto;
+            right: -10px;
+            border-right-color: transparent;
+            border-left-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: 50%;
+            top: 20px;
+            width: 12px;
+            height: 12px;
+            background: #ff69b4;
+            border-radius: 50%;
+            transform: translateX(-50%);
+            border: 3px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .timeline-photo {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .timeline-date {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .timeline-text {
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* 弹出窗口 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
+            animation: modalSlideIn 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .modal-buttons {
+            margin-top: 20px;
+            position: relative;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            position: relative;
+        }
+
+        .btn-yes {
+            background: #ff69b4;
+            color: white;
+            transform-origin: center;
+            z-index: 1001;
+        }
+
+        .btn-no {
+            background: #ddd;
+            color: #333;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* "是"按钮放大时的特殊样式 */
+        .btn-yes.giant {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1010;
+            border-radius: 50%;
+            width: 100px;
+            height: 100px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(255, 105, 180, 0.4);
+        }
+
+        /* GIF 和音乐播放区域 */
+        .celebration {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .celebration img {
+            max-width: 90%;
+            max-height: 70%;
+            border-radius: 15px;
+        }
+
+        .celebration-text {
+            color: white;
+            font-size: 24px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .timeline-content {
+                margin-left: 30px;
+                margin-right: 10px;
+            }
+
+            .timeline-item:nth-child(even) .timeline-content {
+                margin-left: 10px;
+                margin-right: 30px;
+            }
+
+            .timeline::before {
+                left: 15px;
+            }
+
+            .timeline-dot {
+                left: 15px;
+            }
+        }
+
+        /* 特殊效果：当按钮超大时的动画 */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 105, 180, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 20px rgba(255, 105, 180, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 105, 180, 0);
+            }
+        }
+
+        .btn-yes.super-giant {
+            animation: pulse 2s infinite;
+        }
+    </style>
 </head>
 <body>
+    <!-- 时间线内容 -->
+    <div class="timeline-container">
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <img src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='200'><rect width='400' height='200' fill='%23e1f5fe'/><text x='200' y='100' text-anchor='middle' dy='.3em' font-family='Arial' font-size='16' fill='%23666'>第一张照片</text></svg>" alt="照片1" class="timeline-photo">
+                    <div class="timeline-date">2024年1月</div>
+                    <div class="timeline-text">这是我们第一次相遇的时刻，阳光正好，微风不燥，一切都显得那么美好。</div>
+                </div>
+            </div>
 
-<h1>嘿嘿</h1>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <img src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='200'><rect width='400' height='200' fill='%23fff3e0'/><text x='200' y='100' text-anchor='middle' dy='.3em' font-family='Arial' font-size='16' fill='%23666'>第二张照片</text></svg>" alt="照片2" class="timeline-photo">
+                    <div class="timeline-date">2024年3月</div>
+                    <div class="timeline-text">春天来了，我们一起走过樱花飞舞的小径，粉色的花瓣飘落在你的肩膀上。</div>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <img src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='200'><rect width='400' height='200' fill='%23e8f5e8'/><text x='200' y='100' text-anchor='middle' dy='.3em' font-family='Arial' font-size='16' fill='%23666'>第三张照片</text></svg>" alt="照片3" class="timeline-photo">
+                    <div class="timeline-date">2024年6月</div>
+                    <div class="timeline-text">夏日的海边，夕阳西下，我们在沙滩上留下了足迹，也留下了美好的回忆。</div>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <img src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='200'><rect width='400' height='200' fill='%23fce4ec'/><text x='200' y='100' text-anchor='middle' dy='.3em' font-family='Arial' font-size='16' fill='%23666'>第四张照片</text></svg>" alt="照片4" class="timeline-photo">
+                    <div class="timeline-date">2024年12月</div>
+                    <div class="timeline-text">时光荏苒，一年又过去了。感谢有你陪伴的每一个日子，让生活变得如此精彩。</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹出提问窗口 -->
+    <div class="modal" id="questionModal">
+        <div class="modal-content">
+            <h2>💕 特别的问题</h2>
+            <p>看完这些美好的回忆，你愿意和我一起走向更美好的未来吗？</p>
+            <div class="modal-buttons">
+                <button class="btn btn-yes" id="yesBtn">是</button>
+                <button class="btn btn-no" id="noBtn">否</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 庆祝动画 -->
+    <div class="celebration" id="celebration">
+        <img src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><rect width='300' height='300' fill='%23ff69b4' rx='15'/><text x='150' y='130' text-anchor='middle' dy='.3em' font-family='Arial' font-size='24' fill='white'>🎉</text><text x='150' y='170' text-anchor='middle' dy='.3em' font-family='Arial' font-size='18' fill='white'>庆祝GIF</text><text x='150' y='200' text-anchor='middle' dy='.3em' font-family='Arial' font-size='14' fill='white'>动画播放中...</text></svg>" alt="庆祝GIF">
+        <div class="celebration-text">🎉 太棒了！让我们一起创造更多美好回忆！🎉</div>
+    </div>
+
+    <!-- 背景音乐 -->
+    <audio id="bgMusic" loop>
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmcdBjiN1vLNeSsFJHfH8N2QQAoUXrTp66hVFApGA==" type="audio/wav">
+    </audio>
+
+    <script>
+        // 创建飘落花瓣
+        function createPetal() {
+            const petal = document.createElement('div');
+            petal.className = 'petal';
+            petal.style.left = Math.random() * 100 + 'vw';
+            petal.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            petal.style.opacity = Math.random();
+            petal.style.transform = `rotate(${Math.random() * 360}deg)`;
+            document.body.appendChild(petal);
+            
+            setTimeout(() => {
+                petal.remove();
+            }, 5000);
+        }
+
+        // 持续创建花瓣
+        setInterval(createPetal, 300);
+
+        // 监听滚动，在最后显示弹窗
+        let hasShownModal = false;
+        
+        function checkScroll() {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const windowHeight = window.innerHeight;
+            const documentHeight = document.documentElement.scrollHeight;
+            
+            if (scrollTop + windowHeight >= documentHeight - 100 && !hasShownModal) {
+                hasShownModal = true;
+                setTimeout(() => {
+                    document.getElementById('questionModal').style.display = 'flex';
+                }, 500);
+            }
+        }
+
+        window.addEventListener('scroll', checkScroll);
+
+        // 按钮点击事件
+        const yesBtn = document.getElementById('yesBtn');
+        const noBtn = document.getElementById('noBtn');
+        const modal = document.getElementById('questionModal');
+        const celebration = document.getElementById('celebration');
+        const bgMusic = document.getElementById('bgMusic');
+
+        // 记录"否"按钮被点击的次数
+        let noClickCount = 0;
+        let currentScale = 1;
+
+        yesBtn.addEventListener('click', function() {
+            modal.style.display = 'none';
+            celebration.style.display = 'flex';
+            bgMusic.play().catch(e => console.log('音频播放需要用户交互'));
+            
+            // 6秒后关闭庆祝画面
+            setTimeout(() => {
+                celebration.style.display = 'none';
+                bgMusic.pause();
+            }, 6000);
+        });
+
+        noBtn.addEventListener('click', function() {
+            noClickCount++;
+            
+            // 每次点击"否"，"是"按钮放大1.5倍
+            currentScale *= 1.5;
+            
+            // 更新"是"按钮的样式
+            yesBtn.style.transform = `scale(${currentScale})`;
+            yesBtn.style.zIndex = '1010';
+            
+            // 根据放大程度添加不同的视觉效果
+            if (currentScale > 3) {
+                yesBtn.classList.add('giant');
+            }
+            
+            if (currentScale > 6) {
+                yesBtn.classList.add('super-giant');
+                yesBtn.style.width = Math.min(currentScale * 50, window.innerWidth * 0.8) + 'px';
+                yesBtn.style.height = Math.min(currentScale * 50, window.innerHeight * 0.8) + 'px';
+            }
+            
+            // 当按钮变得非常大时，充满屏幕
+            if (currentScale > 10) {
+                yesBtn.style.width = '100vw';
+                yesBtn.style.height = '100vh';
+                yesBtn.style.borderRadius = '0';
+                yesBtn.style.fontSize = Math.min(currentScale * 8, 100) + 'px';
+                yesBtn.innerHTML = '就知道你会说是的！💕';
+                
+                // 隐藏弹窗背景
+                modal.style.background = 'none';
+            }
+            
+            // 更新"否"按钮的状态
+            const noMessages = [
+                '再想想',
+                '真的不要吗？',
+                '最后一次机会',
+                '你确定？',
+                '不可能！',
+                '我不信',
+                '你在逗我',
+                '不存在的'
+            ];
+            
+            if (noClickCount <= noMessages.length) {
+                noBtn.textContent = noMessages[noClickCount - 1] || '不存在的';
+            }
+            
+            // "否"按钮逐渐变小并移动
+            noBtn.style.transform = `scale(${Math.max(1 - noClickCount * 0.1, 0.3)}) translateX(${noClickCount * 20}px)`;
+            
+            // 当"否"按钮被点击太多次时，让它消失
+            if (noClickCount > 5) {
+                noBtn.style.opacity = Math.max(1 - (noClickCount - 5) * 0.2, 0.1);
+            }
+            
+            if (noClickCount > 8) {
+                noBtn.style.display = 'none';
+            }
+        });
+
+        // 自动触发滚动检查（适用于内容较短的情况）
+        setTimeout(() => {
+            checkScroll();
+        }, 3000);
+
+        // 为时间线项目添加交错动画
+        const timelineItems = document.querySelectorAll('.timeline-item');
+        timelineItems.forEach((item, index) => {
+            item.style.animationDelay = (index * 0.3) + 's';
+        });
+
+        // 防止页面被按钮撑开而出现滚动条
+        window.addEventListener('resize', function() {
+            if (currentScale > 10) {
+                yesBtn.style.width = '100vw';
+                yesBtn.style.height = '100vh';
+            }
+        });
+    </script>
+</body>
+</html>
